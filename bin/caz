@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# 显示使用方法
+show_usage() {
+    echo "清理 .DS_Store 并创建 zip 压缩包"
+    echo ""
+    echo "用法: caz [选项] [目录路径] [压缩包名称]"
+    echo ""
+    echo "选项:"
+    echo "  -h, --help    显示帮助信息"
+    echo ""
+    echo "示例:"
+    echo "  caz                     # 压缩当前目录，使用目录名作为压缩包名"
+    echo "  caz ./                  # 同上"
+    echo "  caz /path/to/dir        # 压缩指定目录，使用目录名作为压缩包名"
+    echo "  caz ./ myarchive.zip    # 压缩当前目录，指定压缩包名为 myarchive.zip"
+    echo "  caz /path/to/dir custom.zip  # 压缩指定目录，指定压缩包名为 custom.zip"
+    exit 0
+}
+
+# 处理帮助参数
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    show_usage
+fi
+
+# 错误处理
+set -e
+
+# 参数处理
+TARGET_DIR="${1:-.}"
+# 获取目标目录的绝对路径
+TARGET_DIR=$(realpath "$TARGET_DIR")
+# 获取目标目录名称
+DIR_NAME=$(basename "$TARGET_DIR")
+
+# 确定压缩包名称
+if [ -n "$2" ]; then
+    # 如果提供了第二个参数，使用它作为压缩包名称
+    ZIP_NAME="$2"
+    # 如果没有.zip后缀，添加它
+    [[ "$ZIP_NAME" != *.zip ]] && ZIP_NAME="${ZIP_NAME}.zip"
+else
+    # 否则使用目录名
+    ZIP_NAME="${DIR_NAME}.zip"
+fi
+
+# 检查目标目录是否存在
+if [ ! -d "$TARGET_DIR" ]; then
+    echo "错误: 目录 '$TARGET_DIR' 不存在"
+    show_usage
+fi
+
+# 切换到目标目录
+cd "$TARGET_DIR"
+
+# 删除所有 .DS_Store 文件（静默模式）
+find . -name ".DS_Store" -delete 2>/dev/null
+
+# 创建zip文件，隐藏详细输出
+if zip -rq "$ZIP_NAME" . -x "*.zip" 2>/dev/null; then
+    echo "✓ 已创建: $ZIP_NAME"
+else
+    echo "✗ 创建压缩包失败"
+    exit 1
+fi
