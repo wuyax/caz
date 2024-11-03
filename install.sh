@@ -19,7 +19,7 @@ fi
 # 下载脚本
 echo "正在下载 CAZ..."
 TEMP_FILE=$(mktemp)
-curl -fsSL https://raw.githubusercontent.com/wuyax/caz/main/bin/caz -o "$TEMP_FILE"
+curl -fsSL https://raw.githubusercontent.com/wuyax/caz/refs/heads/master/bin/caz -o "$TEMP_FILE"
 
 # 检查下载是否成功
 if [ $? -ne 0 ]; then

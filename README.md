@@ -21,7 +21,7 @@ brew install caz
 ### 手动安装
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wuyax/caz/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/wuyax/caz/refs/heads/master/install.sh | bash
 ```
 
 ## 使用方法
