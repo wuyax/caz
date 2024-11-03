@@ -1,51 +1,52 @@
 # CAZ (Clean And Zip)
 
-CAZ 是一个简单而强大的命令行工具，用于清理目录中的 .DS_Store 文件并创建 zip 压缩包。
+CAZ is a simple yet powerful command-line tool for cleaning .DS_Store files from directories and creating zip archives.
 
-## 功能
+## Features
 
-- 自动删除目录及其子目录中的所有 .DS_Store 文件
-- 创建目录的 zip 压缩包
-- 支持自定义压缩包名称
-- 简洁的命令行界面
+- Automatically removes all .DS_Store files from directories and subdirectories
+- Creates zip archives of directories
+- Supports custom archive names
+- Clean command-line interface
 
-## 安装
+## Installation
 
-### 使用 Homebrew 安装（推荐）
+### Using Homebrew (Recommended)
 
 ```bash
 brew tap wuyax/caz
 brew install caz
 ```
 
-### 手动安装
+### Manual Installation
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/wuyax/caz/refs/heads/master/install.sh | bash
 ```
 
-## 使用方法
+## Usage
 
 ```bash
-# 压缩当前目录，使用目录名作为压缩包名
+# Compress current directory using directory name as archive name
 caz
 
-# 压缩当前目录，指定压缩包名称
+# Compress current directory with specified archive name
 caz ./ myarchive.zip
 
-# 压缩指定目录
+# Compress specified directory
 caz /path/to/dir
 
-# 压缩指定目录，并指定压缩包名称
+# Compress specified directory with custom archive name
 caz /path/to/dir custom.zip
 ```
 
-## 选项
+## Options
 
 ```bash
--h, --help    显示帮助信息
+-h, --help    Show help information
+-v, --version Show version information
 ```
 
-## 许可证
+## License
 
-MIT License - 详见 [LICENSE](LICENSE) 文件
+MIT License - see [LICENSE](LICENSE) file for details
