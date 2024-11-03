@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Create Release Package
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          VERSION_NUM=${VERSION#v}
+          PACKAGE_NAME="caz-${VERSION_NUM}"
+          
+          # 创建发布目录结构
+          mkdir -p "${PACKAGE_NAME}/bin"
+          cp LICENSE "${PACKAGE_NAME}/"
+          cp README.md "${PACKAGE_NAME}/"
+          cp bin/caz "${PACKAGE_NAME}/bin/"
+          
+          # 创建 tar.gz 包
+          tar -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
+          
+          # 计算 SHA256
+          SHA256=$(shasum -a 256 "${PACKAGE_NAME}.tar.gz" | cut -d ' ' -f 1)
+          echo "PACKAGE_SHA=${SHA256}" >> $GITHUB_ENV
+          echo "PACKAGE_NAME=${PACKAGE_NAME}.tar.gz" >> $GITHUB_ENV
+          echo "VERSION_NUM=${VERSION_NUM}" >> $GITHUB_ENV
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./${{ env.PACKAGE_NAME }}
+          asset_name: ${{ env.PACKAGE_NAME }}
+          asset_content_type: application/gzip
+
+      - name: Update Homebrew Formula
+        env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TOKEN }}
+        run: |
+          # 克隆 Homebrew tap 仓库
+          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository_owner }}/homebrew-caz.git
+          cd homebrew-caz
+          
+          # 更新 formula
+          cat > caz.rb << EOF
+          class Caz < Formula
+            desc "Clean .DS_Store files and create ZIP archives"
+            homepage "https://github.com/${{ github.repository }}"
+            url "https://github.com/${{ github.repository }}/releases/download/v${VERSION_NUM}/caz-${VERSION_NUM}.tar.gz"
+            sha256 "${PACKAGE_SHA}"
+            license "MIT"
+          
+            def install
+              bin.install "bin/caz"
+            end
+          
+            test do
+              system "#{bin}/caz", "-h"
+            end
+          end
+          EOF
+          
+          # 提交更新
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add caz.rb
+          git commit -m "Update formula to version ${VERSION_NUM}"
+          git push
