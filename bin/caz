@@ -14,11 +14,11 @@ show_usage() {
     echo "  -v, --version  Show version information"
     echo ""
     echo "Examples:"
-    echo "  caz                     # Compress current directory, use directory name as archive name"
-    echo "  caz ./                  # Same as above"
-    echo "  caz /path/to/dir        # Compress specified directory, use directory name as archive name"
-    echo "  caz ./ myarchive.zip    # Compress current directory, specify archive name as myarchive.zip"
-    echo "  caz /path/to/dir custom.zip  # Compress specified directory, specify archive name as custom.zip"
+    echo "  caz                         # Compress current directory, use directory name as archive name"
+    echo "  caz ./                      # Same as above"
+    echo "  caz /path/to/dir            # Compress specified directory, use directory name as archive name"
+    echo "  caz ./ myarchive.zip        # Compress current directory, specify archive name as myarchive.zip"
+    echo "  caz /path/to/dir custom.zip # Compress specified directory, specify archive name as custom.zip"
     exit 0
 }
 
