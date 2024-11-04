@@ -37,12 +37,12 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: v${{ env.VERSION_NUM }}
+          release_name: Release v${{ env.VERSION_NUM }}
           draft: false
           prerelease: false
 
@@ -60,6 +60,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TOKEN }}
         run: |
+          # 检查 Homebrew tap 仓库是否存在
+          if ! curl --output /dev/null --silent --head --fail "https://github.com/${{ github.repository_owner }}/homebrew-caz"; then
+            echo "Error: homebrew-caz repository does not exist. Please create it first."
+            exit 1
+          fi
+          
           # 克隆 Homebrew tap 仓库
           git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository_owner }}/homebrew-caz.git
           cd homebrew-caz
