@@ -12,13 +12,14 @@ show_usage() {
     echo "Options:"
     echo "  -h, --help     Show help information"
     echo "  -v, --version  Show version information"
+    echo "  -r, --root     Keep root directory in archive"
     echo ""
     echo "Examples:"
-    echo "  caz                         # Compress current directory, use directory name as archive name"
-    echo "  caz ./                      # Same as above"
-    echo "  caz /path/to/dir            # Compress specified directory, use directory name as archive name"
-    echo "  caz ./ myarchive.zip        # Compress current directory, specify archive name as myarchive.zip"
-    echo "  caz /path/to/dir custom.zip # Compress specified directory, specify archive name as custom.zip"
+    echo "  caz                         # Compress current directory contents only"
+    echo "  caz -r                      # Compress including the root directory"
+    echo "  caz -r /path/to/dir         # Compress specified directory, keeping root directory"
+    echo "  caz ./ myarchive.zip        # Compress current directory contents only"
+    echo "  caz -r ./ myarchive.zip     # Compress current directory, keeping root directory"
     exit 0
 }
 
@@ -28,28 +29,43 @@ show_version() {
     exit 0
 }
 
-# Handle help and version parameters
-if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
-    show_usage
-elif [[ "$1" == "-v" ]] || [[ "$1" == "--version" ]]; then
-    show_version
-fi
+# Add root directory flag
+KEEP_ROOT=false
 
-# Error handling
-set -e
+# Handle parameters
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_usage
+            ;;
+        -v|--version)
+            show_version
+            ;;
+        -r|--root)
+            KEEP_ROOT=true
+            shift
+            ;;
+        *)
+            if [ -z "$TARGET_DIR" ]; then
+                TARGET_DIR="$1"
+            elif [ -z "$ZIP_NAME" ]; then
+                ZIP_NAME="$1"
+            fi
+            shift
+            ;;
+    esac
+done
 
-# Parameter processing
-TARGET_DIR="${1:-.}"
+# Set default target directory if not specified
+TARGET_DIR="${TARGET_DIR:-.}"
 # Get absolute path of target directory
 TARGET_DIR=$(realpath "$TARGET_DIR")
 # Get target directory name
 DIR_NAME=$(basename "$TARGET_DIR")
 
 # Determine archive name
-if [ -n "$2" ]; then
-    # If a second parameter is provided, use it as the archive name
-    ZIP_NAME="$2"
-    # If the archive name does not end with .zip, add it
+if [ -n "$ZIP_NAME" ]; then
+    # If archive name is provided, use it
     [[ "$ZIP_NAME" != *.zip ]] && ZIP_NAME="${ZIP_NAME}.zip"
 else
     # Otherwise, use the directory name
@@ -62,16 +78,34 @@ if [ ! -d "$TARGET_DIR" ]; then
     show_usage
 fi
 
-# Change to target directory
-cd "$TARGET_DIR"
-
-# Delete all .DS_Store files (silent mode)
-find . -name ".DS_Store" -delete 2>/dev/null
-
-# Create zip file, hide detailed output
-if zip -rq "$ZIP_NAME" . -x "*.zip" 2>/dev/null; then
-    echo "✓ Created: $ZIP_NAME"
-else
-    echo "✗ Archive creation failed"
+# Ensure ZIP_NAME doesn't contain path traversal
+if [[ "$ZIP_NAME" == *"/"* ]]; then
+    echo "Error: Archive name cannot contain path separators"
     exit 1
+fi
+
+# Delete .DS_Store files only within the target directory
+find "$TARGET_DIR" -name ".DS_Store" -delete 2>/dev/null
+
+# Create zip file based on root directory preference
+if [ "$KEEP_ROOT" = true ]; then
+    # Change to parent directory and include root directory in zip
+    cd "$(dirname "$TARGET_DIR")"
+    BASE_NAME=$(basename "$TARGET_DIR")
+    # Ensure we only zip the target directory
+    if zip -rq "$TARGET_DIR/$ZIP_NAME" "$BASE_NAME" -x "*.zip" 2>/dev/null; then
+        echo "✓ Created: $ZIP_NAME (including root directory)"
+    else
+        echo "✗ Archive creation failed"
+        exit 1
+    fi
+else
+    # Original behavior: change to target directory and zip contents
+    cd "$TARGET_DIR"
+    if zip -rq "$ZIP_NAME" . -x "*.zip" 2>/dev/null; then
+        echo "✓ Created: $ZIP_NAME"
+    else
+        echo "✗ Archive creation failed"
+        exit 1
+    fi
 fi
